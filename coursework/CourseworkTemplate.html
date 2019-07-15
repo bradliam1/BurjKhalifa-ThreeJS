@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <title>Coursework template</title>
+        <link rel="shortcut icon" href="../favicon.ico">
+        <script type="text/javascript" src="../libs/three.js"></script>
+        <script type="text/javascript" src="../libs/jquery.js"></script>
+        <script type="text/javascript" src="../libs/stats.js"></script>
+        <script type="text/javascript" src="../libs/dat.gui.js"></script>
+        <script type="text/javascript" src="../libs/OrbitControls.js"></script>
+        <style>
+            body{
+                /* set margin to 0 and overflow to hidden, to go fullscreen */
+                margin: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div id="Stats-output">
+        </div>
+        <!-- Div which will hold the Output -->
+        <div id="WebGL-output">
+        </div>
+
+        <!-- Javascript code that runs our Three.js examples -->
+        <script type="text/javascript">
+
+            // once everything is loaded, we run our Three.js stuff.
+            $(function () {
+
+                
+                var building = {xPos:0,yPos:0, texture:0,};
+
+                var stats = initStats();
+
+                // create a scene, that will hold all our elements such as objects, cameras and lights.
+                var scene = new THREE.Scene();
+
+                // create a camera, which defines where we're looking at.
+                camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 200000);
+                scene.add(camera);
+
+                mousecameraControl = new THREE.OrbitControls(camera);
+                var controls = new function () {
+                    this.Height = 10;
+                    this.Width = 15;
+                    this.Number = 3;
+                    this.DaySpeed = 50;
+                    this.SunPosition = 3000;
+                };
+
+                mousecameraControl.rotateSpeed = 2;
+
+
+
+                // create a render and set the size
+                var renderer = new THREE.WebGLRenderer();
+
+                renderer.setClearColor(0xEEEEEE, 1.0);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.shadowMap.enabled = true;
+
+
+                // add the output of the renderer to the html element
+                $("#WebGL-output").append(renderer.domElement);
+
+                var gui = new dat.GUI();
+
+                gui.add(controls, 'Height', 1, 20).step(1).onChange(function () {
+
+                    CreateScene();
+
+                });
+                gui.add(controls, 'Width', 12, 100).step(1).onChange(function () {
+
+                    CreateScene();
+
+                });
+                gui.add(controls, 'Number', 2, 10).step(1).onChange(function () {
+
+                    CreateScene();
+
+                });
+                gui.add(controls, 'DaySpeed', 1, 200).step(1);
+        
+              
+                var Buildingtexture1 = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/Building1Texture.jpg');
+               
+                var Buildingtexture2 = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/Building2Texture.jpg');
+
+                var Buildingtexture3 = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/Building3Texture.jpg');
+
+                var Buildingtexture4 = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/Building4Texture.jpg');
+
+                var Groundtexture = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/GroundTexture.jpg');
+
+
+                var PostMesh = new THREE.MeshPhongMaterial({color:0xaaaaaa});
+
+                var BulbMesh = new THREE.MeshBasicMaterial({color:0xffffff});
+                
+                var Windowtexture = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/WindowTexture.jpg');
+                var Metaltexture = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/MetalTexture.jpg');
+                
+                var Mountainmaterial = new THREE.MeshBasicMaterial({color:0x654321});
+                                
+                var colorChosen = {color: "#1861b3" };
+                gui.addColor(colorChosen,'color')
+                var urls = [
+                    '/WebGLCoursework/coursework/Assets/SkyBox/bluecloud_ft.jpg',
+                    '/WebGLCoursework/coursework/Assets/SkyBox/bluecloud_bk.jpg',
+                    '/WebGLCoursework/coursework/Assets/SkyBox/bluecloud_up.jpg',
+                    '/WebGLCoursework/coursework/Assets/SkyBox/bluecloud_dn.jpg',
+                    '/WebGLCoursework/coursework/Assets/SkyBox/bluecloud_rt.jpg',
+                    '/WebGLCoursework/coursework/Assets/SkyBox/bluecloud_lf.jpg',
+                ];
+                var reflectionCube = new THREE.CubeTextureLoader().load(urls);
+
+
+                reflectionCube.format = THREE.RGBFormat;
+
+                scene.background = reflectionCube;
+
+
+                var raycaster = new THREE.Raycaster();
+                var mouse = new THREE.Vector2();
+
+                
+
+                var geometry = new THREE.SphereGeometry(500, 10, 10);
+
+                var texture = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/SunTexture.jpg');
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(1, 1);
+                var SphereMaterial = new THREE.MeshBasicMaterial({map: texture});
+
+
+                var Sun = new THREE.Mesh(geometry, SphereMaterial);
+                Sun.castShadow = false;
+                Sun.position.x = 1000;
+                Sun.position.y = 0;
+                Sun.position.z = 100000;
+                scene.add(Sun);
+
+                camera.position.x = 120;
+                camera.position.y = 70;
+                camera.position.z = 120;
+                mousecameraControl.target.set(0, 30, 0);
+
+                // add subtle ambient lighting
+                var ambientLight = new THREE.AmbientLight(0x1f1f1f);
+                //scene.add(ambientLight);
+
+                // add spotlight for the shadows
+                var directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+                directionalLight.shadow.mapSize.width = 8096;
+                directionalLight.shadow.mapSize.height = 8096;
+
+                directionalLight.shadow.camera = new THREE.OrthographicCamera(-2000, 2000, 2000, -2000, 0.5, 5000);
+
+                var planeGeometry = new THREE.PlaneGeometry(5000, 5000);
+
+                var texture = new THREE.TextureLoader().load('/WebGLCoursework/coursework/Assets/SandTexture.jpg');
+
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(400, 400);
+                var material = new THREE.MeshPhongMaterial({map: texture});
+
+                var ShadowCube = new THREE.BoxGeometry(10000,10000,10000);
+                
+                var ShadowCubematerial = new THREE.MeshBasicMaterial( {color: 0x555555,side:THREE.BackSide,transparent:true ,opacity:0} );
+                
+                var ShadowCubeMesh = new THREE.Mesh(ShadowCube, ShadowCubematerial);
+                ShadowCubeMesh.castShadow = false;
+                ShadowCubeMesh.recieveShadow = false;
+                scene.add(ShadowCubeMesh);
+
+                var plane = new THREE.Mesh(planeGeometry, material);
+                var plane2 = new THREE.Mesh(planeGeometry, material);
+                plane.receiveShadow = true;
+                plane2.castShadow = true;
+                // rotate and position the plane
+                plane.rotation.x = -0.5 * Math.PI;
+                plane2.rotation.x = -0.5 * Math.PI;
+                plane.position.x = 0;
+
+                // add the plane to the scene
+                scene.add(plane);
+
+                plane2.position.y = -2;
+
+                // add the plane to the scene
+                scene.add(plane2);
+
+
+                directionalLight.castShadow = true;
+                scene.add(directionalLight);
+                var Streetlight =[];
+
+                var angle = 2 * Math.PI / 10000;
+                scene.fog = new THREE.Fog(0x3f3e3f, 0, 1000);
+                // call the render  00
+                
+                window.addEventListener( 'mousemove', onMouseMove, false );
+                window.addEventListener( 'click', onclick, false );
+                
+                var numberOfRowsOfBuildings=60;
+                var SpreadOfBuildings=25;
+                CreateGenericBuildings(SpreadOfBuildings,numberOfRowsOfBuildings);
+                Mountains();
+                CreateScene();
+                CreateLamps(SpreadOfBuildings,numberOfRowsOfBuildings);
+              
+                render();
+
+                function CreateScene() {
+
+                    do {
+                        var Object = scene.getObjectByName("Building");
+                        scene.remove(Object);
+                    } while (Object != null)
+
+                    CreateBuilding(controls.Height, controls.Width, controls.Number);
+
+                }
+                function onMouseMove( event ) {
+
+                        // calculate mouse position in normalized device coordinates
+                        // (-1 to +1) for both components
+
+                        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+                        if (mouse.x>0.66&&mouse.y>0.66){
+                            mousecameraControl.enabled = false;
+                        }else{
+                            
+                            mousecameraControl.enabled = true;
+                        }
+
+                }
+                function onclick(event) {
+                    raycaster.setFromCamera( mouse, camera );
+
+                    // calculate objects intersecting the picking ray
+                    var intersects = raycaster.intersectObjects( scene.children );
+                    if (intersects.length!=0){
+                        if (intersects[ 0 ].object.name!="")
+                            intersects[ 0 ].object.material.color.set( colorChosen.color );
+                    }
+                    
+                }
+                function CreateLamps(SpreadOfBuildings,NumberOfBuildings){
+                    for (var xPos = 0; xPos < NumberOfBuildings; xPos++) {
+                        for (var zPos= 0; zPos < NumberOfBuildings; zPos++) {
+                        if ((xPos<NumberOfBuildings/2-1||xPos>NumberOfBuildings/2+1)||(zPos<NumberOfBuildings/2-1||zPos>NumberOfBuildings/2+1)){
+                            if ((xPos==NumberOfBuildings/2-2||xPos==NumberOfBuildings/2+2)&&(zPos==NumberOfBuildings/2-2||zPos==NumberOfBuildings/2+2)){
+                                var light = new THREE.PointLight( 0xffefef, 0.5, 100 ,1);
+                                light.position.set( -(NumberOfBuildings*SpreadOfBuildings)/2+SpreadOfBuildings/3+xPos*SpreadOfBuildings, 3, -(NumberOfBuildings*SpreadOfBuildings)/2+SpreadOfBuildings/3+zPos*SpreadOfBuildings );
+                                
+                                
+                                light.color = new THREE.Color(0x0);
+                                Streetlight.push(light);
+                                scene.add( light );        
+                            }
+                            CreateSingleLamp(-(NumberOfBuildings*SpreadOfBuildings)/2+SpreadOfBuildings/3+xPos*SpreadOfBuildings,-(NumberOfBuildings*SpreadOfBuildings)/2+SpreadOfBuildings/3+zPos*SpreadOfBuildings);
+                        
+                        }
+                        }
+
+                    }
+                    
+                    
+                }
+                
+                function Mountains(){
+                    for (var x = -25; x < 25; x++) {
+                        for (var z = -25;z < 25; z++) {
+                            if (x==-25||x==24||z==-25||z==24){
+                                const radius = 100+Math.floor(Math.random() * 400);
+                                const height = 50+Math.floor(Math.random() * 100);
+                                const segments = 10;
+                                const geometry = new THREE.ConeBufferGeometry(radius, height, segments);
+                                
+                                var Mountain = new THREE.Mesh(geometry, Mountainmaterial);
+                                Mountain.position.x = x*100;
+                                Mountain.position.z = z*100;
+                                Mountain.y = height/2;
+                                scene.add(Mountain);
+                            }
+
+                        }
+                   }
+                    
+                    
+                }
+                function CreateSingleLamp(x,z){
+                    
+                    var Post = new THREE.CylinderGeometry(0.05, 0.05,1.5, 10);
+                    
+                    var Bulb = new THREE.SphereGeometry(0.2, 10, 10);
+                    
+                    
+                    var PostObj = new THREE.Mesh(Post, PostMesh);
+
+                    var BulbObj = new THREE.Mesh(Bulb, BulbMesh);
+                    
+                    PostObj.position.x=x;
+                    PostObj.position.z=z;
+                    PostObj.position.y=0.75;
+                    BulbObj.position.x=x;
+                    BulbObj.position.z=z;
+                    BulbObj.position.y=1.5;
+                    
+                    scene.add(PostObj);
+                    scene.add(BulbObj);
+                }
+                
+                function CreateGenericBuildings(SpreadOfBuildings,numberOfRowsOfBuildings){
+                    for (var hor = 0; hor < numberOfRowsOfBuildings; hor++) {
+                        for (var ver = 0; ver < numberOfRowsOfBuildings; ver++) {
+                            var ChanceToNotCreateBuilding = 10;
+                            if ((hor<numberOfRowsOfBuildings/10)||(ver<numberOfRowsOfBuildings/10)||(hor>numberOfRowsOfBuildings-numberOfRowsOfBuildings/10)||(ver>numberOfRowsOfBuildings-numberOfRowsOfBuildings/10)){
+                                ChanceToNotCreateBuilding = 2;
+                            }else if ((hor<numberOfRowsOfBuildings/6)||(ver<numberOfRowsOfBuildings/6)||(hor>numberOfRowsOfBuildings-numberOfRowsOfBuildings/6)||(ver>numberOfRowsOfBuildings-numberOfRowsOfBuildings/6)){
+                                ChanceToNotCreateBuilding =5;
+                            }
+                            if ( Math.floor(Math.random() * ChanceToNotCreateBuilding)!=0){
+                                if ((hor<numberOfRowsOfBuildings/2-1||hor>numberOfRowsOfBuildings/2+1)||(ver<numberOfRowsOfBuildings/2-1||ver>numberOfRowsOfBuildings/2+1)){
+                                    
+                                    var Mult = (Math.floor(Math.random() * 20)==1)?2:1;
+                                    var Multx = 1;
+                                    var Multz = 1;
+                                    if (Mult == 2&&(Math.floor(Math.random() * 2))==1){
+                                        var Multx = Mult;
+                                    }else{
+                                        var Multz = Mult;
+                                    }
+                                    var Height = 5 + Math.floor(Math.random() * 30);
+                                    var geometry = new THREE.BoxGeometry((5 + Math.floor(Math.random() * 10))*Multx, Height, (5 + Math.floor(Math.random() * 10))*Multz);
+                                    switch (Math.floor(Math.random() * 4) + 1) {
+
+                                        case 1:
+                                            var Buildingtexture =Buildingtexture1;
+                                            break;
+                                        case 2:
+                                            var Buildingtexture=Buildingtexture2;
+                                            break;
+                                        case 3:
+                                            var Buildingtexture =Buildingtexture3;
+                                            break;
+                                        case 4:
+                                            var Buildingtexture =Buildingtexture4;
+                                            break;
+                                    }
+                                    Buildingtexture.wrapS = THREE.RepeatWrapping;
+                                    Buildingtexture.wrapT = THREE.RepeatWrapping;
+                                    Buildingtexture.repeat.set(4, 4);
+                                    var CubeMaterial = new THREE.MeshPhongMaterial({
+                                                      map: Buildingtexture,
+                                                      color: 0xffffff,
+                                                      shininess: 50,
+                                                      specular: 0xffffff
+                                    });
+                                    var cube = new THREE.Mesh(geometry, CubeMaterial);
+                                    cube.position.x = -(numberOfRowsOfBuildings*SpreadOfBuildings)/2+ hor*SpreadOfBuildings;
+                                    cube.position.z = -(numberOfRowsOfBuildings*SpreadOfBuildings)/2+ ver*SpreadOfBuildings;
+                                    cube.position.y = Height / 2;
+                                    
+                                    if ((hor<numberOfRowsOfBuildings/2-20||hor>numberOfRowsOfBuildings/2+20)||(ver<numberOfRowsOfBuildings/2-20||ver>numberOfRowsOfBuildings/2+20)){                                
+                                        cube.castShadow = false;    
+                                        cube.receiveShadow = false;                                     
+                                    }else{                                        
+                                        cube.castShadow = true;
+                                        cube.receiveShadow = true;      
+                                    }
+                                    cube.receiveShadow = true;         
+                                    cube.matrixAutoUpdate = false;
+                                    cube.name="GenericBuildings"
+                                    cube.updateMatrix();
+
+                                    var planeGeometry = new THREE.PlaneGeometry(SpreadOfBuildings/1.5*Multx, SpreadOfBuildings/1.5*Multz);
+
+                                    var texture = Groundtexture;
+
+                                    texture.wrapS = THREE.RepeatWrapping;
+                                    texture.wrapT = THREE.RepeatWrapping;
+                                    texture.repeat.set(2, 2);
+                                    var material = new THREE.MeshLambertMaterial({map: texture});
+                                    var plane = new THREE.Mesh(planeGeometry, material);
+                                    plane.receiveShadow = true;
+                                    plane.position.x = cube.position.x;
+                                    plane.position.z = cube.position.z;
+                                    plane.rotation.x = -0.5 * Math.PI;
+                                    plane.position.y = 0.1;
+
+                                    // add the plane to the scene
+                                    scene.add(plane);
+                                    scene.add(cube);
+                                }
+                            }
+                        }
+                    }
+                    
+                    
+                    
+                }
+                
+                function  CreateColumn(Height, Thickness, NormalTower) {
+                    var radiusTop = Thickness;
+                    var radiusBottom = Thickness;
+                    var height = Height;
+                    var radialSegments = 30;
+                    var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, radialSegments);
+
+                    Windowtexture.wrapS = THREE.RepeatWrapping;
+                    Windowtexture.wrapT = THREE.RepeatWrapping;
+                    Windowtexture.repeat.set(5, 20);
+                    Metaltexture.wrapS = THREE.RepeatWrapping;
+                    Metaltexture.wrapT = THREE.RepeatWrapping;
+                    Metaltexture.repeat.set(1, 1);
+                    var cylinderMaterial;
+                    if (NormalTower) {
+                        cylinderMaterial = new THREE.MeshPhongMaterial({
+                            map: Windowtexture,
+                            color: 0xc0c0c0,
+                            shininess: 50,
+                            specular: 0xffffff
+                        });
+                    } else {
+                        cylinderMaterial = new THREE.MeshPhongMaterial({
+                            map: Metaltexture,
+                            color: 0xffffff,
+                            shininess: 50,
+                            specular: 0xffffff
+                        });
+                    }
+                    var cylinder = new THREE.Mesh(geometry, cylinderMaterial);
+                    cylinder.castShadow = true;
+                    cylinder.receiveShadow = true;                    
+                    cylinder.matrixAutoUpdate = false;
+                    cylinder.name = "Building";
+                    return cylinder;
+
+                }
+                function MoveSun() {
+
+                    var Speed=controls.DaySpeed;
+                    var x2 = Math.cos(angle * controls.SunPosition) * 50000;
+                    var z2 = Math.sin(angle * controls.SunPosition) * 50000;
+                    controls.SunPosition += Speed/10;
+                    console.log(controls.SunPosition );
+                    if (controls.SunPosition > 5000) {
+                        Streetlight.forEach(function(element){     
+                            element.color = new THREE.Color(0xFFFFFF);
+                        });
+                    }
+                    if (controls.SunPosition>5000&&controls.SunPosition < 5500)
+                        ShadowCubeMesh.material.opacity +=(Speed/10)/500;
+                    
+                    if (controls.SunPosition>9500&&ShadowCubeMesh.material.opacity>0)                        
+                        ShadowCubeMesh.material.opacity -=(Speed/10)/500;
+                  
+                    if (controls.SunPosition === 500){
+                        Streetlight.forEach(function(element){      
+                            console.log(element);
+                            element.color = new THREE.Color(0x000000);
+                        });
+                    }
+                    if (controls.SunPosition >= 10000) {
+                        controls.SunPosition = 0;
+                        
+                    }
+                    Sun.position.x = x2;
+                    Sun.position.y = z2;
+                    directionalLight.position.x = Sun.position.x / 100;
+                    directionalLight.position.y = Sun.position.y / 100;
+                    directionalLight.position.z = Sun.position.z / 100;
+
+
+                }
+                function render() {
+                   
+
+                    MoveSun();
+                    stats.update();
+                    mousecameraControl.update();
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(render);
+                }
+
+                function CreateBuilding(Height, Width, Number) {
+
+                    var RadiansForCircleDirection = (2 * Math.PI) / Number;
+
+                    for (var Axis = 1; Axis <= Number; Axis++) {
+                        for (var Tiers = 1; Tiers <= 7; Tiers++) {
+
+                            var Mult = 1 + (Axis * Height);
+
+                            var TempHeight = Height * ((8 - Tiers) * 2);
+
+                            var TowerPart = new CreateColumn(TempHeight + Mult, Width / 20 * ((Tiers) / 2), true);
+                            var L = (Tiers - 1) + Number / 5 * (Width / 200);
+                            var Ang = RadiansForCircleDirection * Axis;
+                            var x2 = Math.cos(Ang) * L;
+                            var z2 = Math.sin(Ang) * L;
+                            TowerPart.position.x = x2;
+
+                            TowerPart.position.y = TempHeight / 2;
+                            TowerPart.position.z = z2;
+                            TowerPart.updateMatrix();
+
+
+                            scene.add(TowerPart);
+                            for (var CurretTier = 1; CurretTier <= Tiers; CurretTier++) {
+
+                                var L = (CurretTier - 1) + Number / 5 * (Width / 200);
+                                var x2 = Math.cos(Ang) * L;
+                                var z2 = Math.sin(Ang) * L;
+                                TempHeight = Height;
+                                TowerPart = new CreateColumn(TempHeight / 2, Width / 19 * ((CurretTier) / 2), false);
+                                TowerPart.position.x = x2;
+                                TempHeight = Height * ((8 - Tiers) * 2);
+                                TowerPart.position.y = TempHeight;
+                                TowerPart.position.z = z2;
+                                TowerPart.updateMatrix();
+                                scene.add(TowerPart);
+                            }
+                        }
+                    }
+
+                    var TempHeight = Height * 9;
+                    var TowerPart = new CreateColumn(TempHeight, Width / 40, true);
+                    var L = Tiers;
+                    var x2 = 0;
+                    var z2 = 0;
+                    TowerPart.position.x = x2;
+                    TowerPart.position.y = TempHeight / 2;
+                    TowerPart.position.z = z2;
+                    var planeGeometry = new THREE.PlaneGeometry(Width*1.5, Width*1.5);
+
+                    var texture =Groundtexture;
+
+                    texture.wrapS = THREE.RepeatWrapping;
+                    texture.wrapT = THREE.RepeatWrapping;
+                    texture.repeat.set(2, 2);
+                    var material = new THREE.MeshLambertMaterial({map: texture});
+                    var plane = new THREE.Mesh(planeGeometry, material);
+                    plane.receiveShadow = true;
+                    
+                    plane.position.x = 0;
+                    plane.position.z = 0;
+                    plane.rotation.x = -0.5 * Math.PI;
+                    plane.position.y = 0.1;
+                    plane.name = "Building";
+                    scene.add(plane);
+                    
+                    TowerPart.updateMatrix();
+                    scene.add(TowerPart);
+                }
+
+                function initStats() {
+
+                    var stats = new Stats();
+
+                    stats.setMode(0); // 0: fps, 1: ms
+
+                    // Align top-left
+                    stats.domElement.style.position = 'absolute';
+                    stats.domElement.style.left = '0px';
+                    stats.domElement.style.top = '0px';
+
+                    $("#Stats-output").append(stats.domElement);
+
+                    return stats;
+                }
+            });
+
+        </script>
+    </body>
+</html>
